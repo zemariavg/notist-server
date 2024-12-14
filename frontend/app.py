@@ -9,6 +9,7 @@ FE_HOST = os.getenv("FE_HOST")
 FE_PORT = os.getenv("FE_PORT")
 
 app = Flask(__name__)
+app.config['JSON_SORT_KEYS'] = False
 
 @app.route('/api/users/<username>', methods=['GET'])
 def api_get_user(username):
