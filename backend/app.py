@@ -9,6 +9,7 @@ BE_HOST = os.getenv("BE_HOST")
 BE_PORT = os.getenv("BE_PORT")
 
 app = Flask(__name__)
+app.config['JSON_SORT_KEYS'] = False
 
 @app.route('/users/<username>', methods=['GET'])
 def get_user(username):

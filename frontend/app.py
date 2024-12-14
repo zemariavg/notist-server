@@ -19,7 +19,7 @@ def api_get_user(username):
         if response.status_code == 404:
             abort(404, description=response.json().get('error', 'User not found'))
 
-        return jsonify(response.json()), response.status_code
+        return response.json(), response.status_code
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
