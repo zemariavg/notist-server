@@ -1,7 +1,9 @@
-from flask import Flask, jsonify, request, abort
 import requests
-from dotenv import load_dotenv
 import os
+import logging
+from flask import Flask, jsonify, request, abort
+from dotenv import load_dotenv
+from utils.validators import validate_note
 
 load_dotenv()
 BACKEND_URL = os.getenv("BACKEND_URL")
@@ -26,16 +28,23 @@ def api_get_user(username):
 @app.route('/note', methods=['POST'])
 def backup_note():
     try:
+        app.logger.info(f"Received note backup req from client: {request.remote_addr}")
         note = request.json
-        if note is None or not isinstance(note, dict) or 'server_metadata' not in note:
-            abort(400, description="Invalid JSON")        
-        
+        validate_note(note)
+
         response = requests.post(f"{BACKEND_URL}/note", json=note)
         
+        if response.status_code != 200:
+            app.logger.error(f"Failed to send note to backend. Response: {response.status_code}")
+            abort(400, description=response.json().get('error', 'Invalid JSON'))
+        
+        app.logger.info(f"Sent note from {request.remote_addr} to backend")
         return response.json(), response.status_code
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
+    # logging.basicConfig(filename='frontend.log', level=logging.INFO)
+    logging.basicConfig(level=logging.INFO)
+    app.logger.info("Starting frontend server")
     app.run(host=FE_HOST, port=FE_PORT)
-
