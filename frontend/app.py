@@ -14,7 +14,6 @@ app.config['JSON_SORT_KEYS'] = False
 @app.route('/api/users/<username>', methods=['GET'])
 def api_get_user(username):
     try:
-        # Forward the request to the backend
         response = requests.get(f"{BACKEND_URL}/users/{username}")
 
         if response.status_code == 404:
@@ -24,5 +23,19 @@ def api_get_user(username):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/note', methods=['POST'])
+def backup_note():
+    try:
+        note = request.json
+        if note is None or not isinstance(note, dict) or 'server_metadata' not in note:
+            abort(400, description="Invalid JSON")        
+        
+        response = requests.post(f"{BACKEND_URL}/note", json=note)
+        
+        return response.json(), response.status_code
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == "__main__":
     app.run(host=FE_HOST, port=FE_PORT)
+
