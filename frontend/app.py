@@ -1,4 +1,3 @@
-from re import A
 import requests
 import os
 import logging
