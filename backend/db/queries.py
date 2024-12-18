@@ -13,6 +13,11 @@ def get_note_by_note_title(session: Session, note_title: str) -> Note:
         Note.note_title == note_title
     ).first()
 
+def get_notes_by_user_id(session: Session, user_id: int) -> list[Note]:
+    return session.query(Note).join(Collaborator).filter(
+        Collaborator.user_id == user_id
+    ).all()
+
 def check_editor_of_note(session: Session, user_id: int, note_id: int) -> bool:
     return session.query(Collaborator).filter(
         Collaborator.user_id == user_id, 
