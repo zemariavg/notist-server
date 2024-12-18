@@ -10,10 +10,12 @@ class Note(Base):
     note_tag = Column(Text, nullable=False)
     iv = Column(Text, nullable=False)
     note_title = Column(Text, nullable=False)
+    version = Column(Integer, nullable=False)
     last_modified_by = Column(Integer, ForeignKey('users.id'), nullable=False)
 
     last_modifier = relationship("User", foreign_keys=[last_modified_by], backref="modified_notes")
 
     def __repr__(self):
-        return f"<Note(id={self.id}, title={self.note_title}, last_modified_by={self.last_modified_by})>"
+        return f"<Note(id={self.id}, note_title={self.note_title}, last_modified_by={self.last_modified_by},\
+                encrypted_note={self.encrypted_note}, note_tag={self.note_tag}, iv={self.iv})>"
     

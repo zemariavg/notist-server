@@ -14,4 +14,5 @@ class Collaborator(Base):
     user = relationship("User", backref="collaborations")
 
     def __repr__(self):
-        return f"<Collaborator(note_id={self.note_id}, user_id={self.user_id}, role={self.role})>"
+        return f"<Collaborator(note_id={self.note_id}, user_id={self.user_id}, \
+                role={self.role}, note_key={self.note_key})>"

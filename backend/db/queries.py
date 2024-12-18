@@ -28,7 +28,8 @@ def check_viewer_of_note(session: Session, user_id: int, note_id: int) -> bool:
     ).first() is not None
 
 def check_owner_of_note(session: Session, user_id: int, note_id: int) -> bool:
-    return session.query(Note).filter(
-        Note.owner_id == user_id, 
-        Note.id == note_id
+    return session.query(Collaborator).filter(
+        Collaborator.user_id == user_id, 
+        Collaborator.note_id == note_id, 
+        Collaborator.role == 'owner'
     ).first() is not None
