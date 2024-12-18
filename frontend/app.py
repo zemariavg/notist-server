@@ -9,9 +9,11 @@ load_dotenv()
 BACKEND_URL = os.getenv("BACKEND_URL")
 FE_HOST = os.getenv("FE_HOST")
 FE_PORT = os.getenv("FE_PORT")
+SERVER_TIMEOUT = 5 # seconds
 
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
+
 
 @app.route('/api/users/<username>', methods=['GET'])
 def api_get_user(username):
@@ -25,16 +27,18 @@ def api_get_user(username):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @app.route('/note', methods=['POST'])
 def backup_note():
     try:
         app.logger.info(f"Received note backup req from client: {request.remote_addr}")
         note = request.json
         validate_note(note)
+        app.logger.info(f"Sent by user: {note['server_metadata']['req_from']}")
 
-        response = requests.post(f"{BACKEND_URL}/note", json=note)
+        response = requests.post(f"{BACKEND_URL}/notes", json=note, timeout=SERVER_TIMEOUT)
         
-        if response.status_code != 200:
+        if response.status_code != 201:
             app.logger.error(f"Failed to send note to backend. Response: {response.status_code}")
             abort(400, description=response.json().get('error', 'Invalid JSON'))
         
@@ -42,6 +46,7 @@ def backup_note():
         return response.json(), response.status_code
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     # logging.basicConfig(filename='frontend.log', level=logging.INFO)
