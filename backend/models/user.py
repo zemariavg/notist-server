@@ -9,4 +9,4 @@ class User(Base):
     public_key = Column(String, nullable=False)
     
     def __repr__(self):
-        return f"<User(id={self.id}, username={self.username}, public_key={self.public_key}, password_hash={self.password_hash})>"
+        return f"<User(id={self.id}, username={self.username}, public_key={self.public_key})>"

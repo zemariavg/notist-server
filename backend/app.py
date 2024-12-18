@@ -2,7 +2,7 @@ import os
 import logging
 from flask import Flask, jsonify, abort, request
 from db.connection import get_db_session
-from db.queries import get_user_by_username
+from db.queries import *
 from models.note import Note
 from sqlalchemy.exc import SQLAlchemyError
 from dotenv import load_dotenv
@@ -26,6 +26,23 @@ def get_user(username):
             return jsonify(user.__repr__()), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/users/<username>/notes', methods=['GET'])
+def get_user_notes(username):
+    try:
+        with next(get_db_session()) as session:
+            notes = get_notes_by_username(session, username)
+
+            if not notes:
+                abort(404, description="No notes found for the user")
+
+            serialized_notes = [note.to_dict() for note in notes] # notes to Json
+
+            return jsonify(serialized_notes), 200
+    except Exception as e:
+        app.logger.error(f"Error fetching notes for user {username}: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
 
 @app.route('/note', methods=['POST'])
 def backup_note():

@@ -13,8 +13,8 @@ FE_PORT = os.getenv("FE_PORT")
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 
-@app.route('/api/users/<username>', methods=['GET'])
-def api_get_user(username):
+@app.route('/users/<username>', methods=['GET'])
+def get_user(username):
     try:
         response = requests.get(f"{BACKEND_URL}/users/{username}")
 
@@ -33,11 +33,11 @@ def backup_note():
         validate_note(note)
 
         response = requests.post(f"{BACKEND_URL}/note", json=note)
-        
+
         if response.status_code != 200:
             app.logger.error(f"Failed to send note to backend. Response: {response.status_code}")
             abort(400, description=response.json().get('error', 'Invalid JSON'))
-        
+
         app.logger.info(f"Sent note from {request.remote_addr} to backend")
         return response.json(), response.status_code
     except Exception as e:

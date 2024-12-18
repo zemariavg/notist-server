@@ -9,11 +9,8 @@ class Note(Base):
     encrypted_note = Column(Text, nullable=False)
     note_tag = Column(Text, nullable=False)
     iv = Column(Text, nullable=False)
-    owner_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     last_modified_by = Column(Integer, ForeignKey('users.id'), nullable=False)
-    owner_note_key = Column(Text, nullable=False)
 
-    owner = relationship("User", foreign_keys=[owner_id], backref="owned_notes")
     last_modifier = relationship("User", foreign_keys=[last_modified_by], backref="modified_notes")
 
     def __repr__(self):
