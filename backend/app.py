@@ -1,13 +1,14 @@
 import os
 import logging
 
-from flask import Flask, abort, request, make_response
+from flask import Flask, abort, request, make_response, jsonify
 from flask.typing import AppOrBlueprintKey
 from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.exceptions import HTTPException
-
+from db.queries import *
 from db.connection import get_db_session
 from helpers.note_helper import handle_note_upsert
+from dotenv import load_dotenv
 
 load_dotenv()
 BE_HOST = os.getenv("BE_HOST")
@@ -33,14 +34,12 @@ app.config['JSON_SORT_KEYS'] = False
 def get_user_notes(username):
     try:
         with next(get_db_session()) as session:
-            notes = get_notes_by_username(session, username)
+            user = get_user_by_username(session, username)
+            if not user:
+                abort(404, description="User not found")
 
-            if not notes:
-                abort(404, description="No notes found for the user")
-
-            serialized_notes = [note.to_dict() for note in notes] # notes to Json
-
-            return jsonify(serialized_notes), 200
+            user_notes = get_notes_by_user_id(session, user.id)
+            return jsonify(user_notes), 200
     except Exception as e:
         app.logger.error(f"Error fetching notes for user {username}: {e}")
         return jsonify({"error": "Internal server error"}), 500

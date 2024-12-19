@@ -15,6 +15,17 @@ class Note(Base):
 
     last_modifier = relationship("User", foreign_keys=[last_modified_by], backref="modified_notes")
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "note_title": self.note_title,
+            "encrypted_note": self.encrypted_note,
+            "note_tag": self.note_tag,
+            "iv": self.iv,
+            "version": self.version,
+            "last_modified_by": self.last_modified_by,
+        }
+
     def __repr__(self):
         return f"<Note(id={self.id}, note_title={self.note_title}, last_modified_by={self.last_modified_by},\
                 encrypted_note={self.encrypted_note}, note_tag={self.note_tag}, iv={self.iv})>"

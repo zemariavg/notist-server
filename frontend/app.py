@@ -27,6 +27,17 @@ def get_user(username):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/users/<username>/notes', methods=['GET'])
+def get_user_notes(username):
+    try:
+        response = requests.get(f"{BACKEND_URL}/users/{username}/notes")
+
+        if response.status_code == 404:
+            abort(404, description=response.json().get('error', 'User not found'))
+        return response.json(), response.status_code
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/note', methods=['POST'])
 def backup_note():
     try:

@@ -13,10 +13,33 @@ def get_note_by_note_title(session: Session, note_title: str) -> Note:
         Note.note_title == note_title
     ).first()
 
-def get_notes_by_user_id(session: Session, user_id: int) -> list[Note]:
+def get_view_notes(session: Session, user_id: int):
     return session.query(Note).join(Collaborator).filter(
-        Collaborator.user_id == user_id
+        Collaborator.user_id == user_id,
+        Collaborator.role == "viewer"
     ).all()
+
+def get_edit_notes(session: Session, user_id: int):
+    return session.query(Note).join(Collaborator).filter(
+        Collaborator.user_id == user_id,
+        Collaborator.role == "editor"
+    ).all()
+
+def get_own_notes(session: Session, user_id: int):
+    return session.query(Note).join(Collaborator).filter(
+        Collaborator.user_id == user_id,
+        Collaborator.role == "owner"
+    ).all()
+
+def get_notes_by_user_id(session: Session, user_id: int) -> dict:
+    own_notes = get_own_notes(session, user_id)
+    edit_notes = get_edit_notes(session, user_id)
+    view_notes = get_view_notes(session, user_id)
+    return {
+        "owner": [note.to_dict() for note in own_notes],
+        "editor": [note.to_dict() for note in edit_notes],
+        "viewer": [note.to_dict() for note in view_notes],
+    }
 
 def check_editor_of_note(session: Session, user_id: int, note_id: int) -> bool:
     return session.query(Collaborator).filter(
@@ -38,3 +61,4 @@ def check_owner_of_note(session: Session, user_id: int, note_id: int) -> bool:
         Collaborator.note_id == note_id, 
         Collaborator.role == 'owner'
     ).first() is not None
+
