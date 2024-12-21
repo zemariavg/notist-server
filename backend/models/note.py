@@ -17,7 +17,6 @@ class Note(Base):
 
     def to_dict(self):
         return {
-            "id": self.id,
             "note_title": self.note_title,
             "encrypted_note": self.encrypted_note,
             "note_tag": self.note_tag,
