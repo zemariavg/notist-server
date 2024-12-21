@@ -9,7 +9,7 @@ class Note(Base):
     encrypted_note = Column(Text, nullable=False)
     note_tag = Column(Text, nullable=False)
     iv = Column(Text, nullable=False)
-    note_title = Column(Text, nullable=False)
+    note_title = Column(Text, nullable=False, unique=True)
     version = Column(Integer, nullable=False)
     last_modified_by = Column(Integer, ForeignKey('users.id'), nullable=False)
 
@@ -23,7 +23,7 @@ class Note(Base):
             "note_tag": self.note_tag,
             "iv": self.iv,
             "version": self.version,
-            "last_modified_by": self.last_modified_by,
+            "last_modified_by": self.last_modifier.username,
         }
 
     def __repr__(self):
