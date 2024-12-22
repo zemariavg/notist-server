@@ -66,8 +66,12 @@ def backup_note():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(filename='frontend.log', level=logging.INFO)
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s",
+        handlers=[
+            logging.FileHandler("frontend.log"),
+            logging.StreamHandler()
+        ]
+    )
     app.logger.info("Starting frontend server")
     
     app.logger.info("Loading server certificates for tls")
@@ -78,4 +82,4 @@ if __name__ == "__main__":
     session.verify = fe_cert
     app.logger.info("Certificates loaded successfully")
     
-    app.run(host=FE_HOST, port=FE_PORT, ssl_context=ssl_context)
+    app.run(host=FE_HOST, port=FE_PORT)
