@@ -82,4 +82,4 @@ if __name__ == "__main__":
     session.verify = be_cert
     app.logger.info("Certificates loaded successfully")
     
-    app.run(host=FE_HOST, port=FE_PORT)
+    app.run(host=FE_HOST, port=FE_PORT, ssl_context=ssl_context)
