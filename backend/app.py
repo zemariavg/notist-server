@@ -71,8 +71,12 @@ def backup_note():
         
 
 if __name__ == "__main__":
-    logging.basicConfig(filename='backend.log', level=logging.INFO)
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s",
+        handlers=[
+            logging.FileHandler("backend.log"),
+            logging.StreamHandler()
+        ]
+    )
     app.logger.info("Starting backend server")
     
     app.logger.info("Loading server certificates for tls")
