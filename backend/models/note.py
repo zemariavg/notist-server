@@ -6,10 +6,10 @@ class Note(Base):
     __tablename__ = 'notes'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    note_title = Column(Text, nullable=False, unique=True)
     encrypted_note = Column(Text, nullable=False)
     note_tag = Column(Text, nullable=False)
     iv = Column(Text, nullable=False)
-    note_title = Column(Text, nullable=False, unique=True)
     version = Column(Integer, nullable=False)
     last_modified_by = Column(Integer, ForeignKey('users.id'), nullable=False)
 
@@ -17,7 +17,8 @@ class Note(Base):
 
     def to_dict(self):
         return {
-            "note_title": self.note_title,
+            #"id": self.id,
+            "title": self.note_title,
             "encrypted_note": self.encrypted_note,
             "note_tag": self.note_tag,
             "iv": self.iv,
@@ -26,5 +27,5 @@ class Note(Base):
         }
 
     def __repr__(self):
-        return f"<Note(id={self.id}, note_title={self.note_title}, last_modified_by={self.last_modified_by},\
+        return f"<Note(id={self.id}, note_title={self.note_title}, last_modified_by={self.last_modifier.username},\
                 encrypted_note={self.encrypted_note}, note_tag={self.note_tag}, iv={self.iv})>"
