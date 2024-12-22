@@ -79,7 +79,7 @@ if __name__ == "__main__":
     ssl_context = (fe_cert, fe_key)
     session = requests.Session()
     session.cert = (fe_cert, fe_key)
-    session.verify = fe_cert
+    session.verify = be_cert
     app.logger.info("Certificates loaded successfully")
     
     app.run(host=FE_HOST, port=FE_PORT)
