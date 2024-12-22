@@ -18,12 +18,6 @@ P12_PWD = os.getenv("P12_PWD")
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 
-fe_cert, fe_key, be_cert = get_p12_data(P12_PATH, P12_PWD)
-ssl_context = (fe_cert, fe_key)
-session = requests.Session()
-session.cert = (fe_cert, fe_key)
-session.verify = fe_cert
-
 @app.route('/api/users/<username>', methods=['GET'])
 def api_get_user(username):
     app.logger.info(f"Received user info req from client: {request.remote_addr}")
@@ -72,8 +66,16 @@ def backup_note():
 
 
 if __name__ == "__main__":
-    # logging.basicConfig(filename='frontend.log', level=logging.INFO)
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(filename='frontend.log', level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
     app.logger.info("Starting frontend server")
+    
+    app.logger.info("Loading server certificates for tls")
+    fe_cert, fe_key, be_cert = get_p12_data(P12_PATH, P12_PWD)
+    ssl_context = (fe_cert, fe_key)
+    session = requests.Session()
+    session.cert = (fe_cert, fe_key)
+    session.verify = fe_cert
+    app.logger.info("Certificates loaded successfully")
     
     app.run(host=FE_HOST, port=FE_PORT, ssl_context=ssl_context)
