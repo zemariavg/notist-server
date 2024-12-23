@@ -1,46 +1,57 @@
 from models.user import User
 from models.note import Note
+from models.note_version import NoteVersion
 from models.collaborator import Collaborator
 from sqlalchemy.orm.session import Session
+from sqlalchemy import desc
 
 def get_user_by_username(session: Session, username: str) -> User:
     return session.query(User).filter(
         User.username == username
     ).first()
 
-def get_note_by_note_title(session: Session, note_title: str) -> Note:
-    return session.query(Note).filter(
+def fetch_note_by_note_title(session: Session, note_title: str) -> NoteVersion:
+    return session.query(NoteVersion).join(Note).filter(
         Note.note_title == note_title
+    ).order_by(desc(NoteVersion.version)).first() 
+
+def fetch_note_by_title_and_version(session: Session, note_title: str, version: int) -> NoteVersion:
+    return session.query(NoteVersion).join(Note).filter(
+        Note.note_title == note_title,
+        NoteVersion.version == version
     ).first()
 
-def get_view_notes(session: Session, user_id: int):
-    return session.query(Note).join(Collaborator).filter(
-        Collaborator.user_id == user_id,
-        Collaborator.role == "viewer"
-    ).all()
+def fetch_notes_for_user(session: Session, user_id: int):
+    # Get all notes the user has access to (either as owner, editor, or viewer)
+    results = session.query(
+        Note.note_title,
+        NoteVersion.iv,
+        NoteVersion.encrypted_note,
+        NoteVersion.note_tag,
+        Collaborator.note_key
+    ).join(Collaborator, Collaborator.note_id == Note.id)\
+    .join(NoteVersion, NoteVersion.note_id == Note.id)\
+    .filter(Collaborator.user_id == user_id)\
+    .order_by(NoteVersion.version.desc())\
+    .distinct(Note.id)\
+    .all()
 
-def get_edit_notes(session: Session, user_id: int):
-    return session.query(Note).join(Collaborator).filter(
-        Collaborator.user_id == user_id,
-        Collaborator.role == "editor"
-    ).all()
-
-def get_own_notes(session: Session, user_id: int):
-    return session.query(Note).join(Collaborator).filter(
-        Collaborator.user_id == user_id,
-        Collaborator.role == "owner"
-    ).all()
-
-def get_notes_by_user_id(session: Session, user_id: int) -> dict:
-    own_notes = get_own_notes(session, user_id)
-    edit_notes = get_edit_notes(session, user_id)
-    view_notes = get_view_notes(session, user_id)
-    return {
-        "owner": [note.to_dict() for note in own_notes],
-        "editor": [note.to_dict() for note in edit_notes],
-        "viewer": [note.to_dict() for note in view_notes],
-    }
-
+    notes = [
+        {
+            "title": note_title,
+            "iv": iv,
+            "note": encrypted_note,
+            "note_tag": note_tag,
+            "note_key": note_key
+        }
+        for note_title, iv, encrypted_note, note_tag, note_key in results
+    ]
+    
+    if not notes:
+        return {"editor": [], "viewer": [], "owner": []}
+    
+    return notes
+    
 def check_editor_of_note(session: Session, user_id: int, note_id: int) -> bool:
     return session.query(Collaborator).filter(
         Collaborator.user_id == user_id, 

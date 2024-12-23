@@ -35,7 +35,7 @@ def api_get_user(username):
 
 @app.route('/users/<username>/notes', methods=['GET'])
 def get_user_notes(username):
-    app.logger.info(f"Received user notes req from client: {request.remote_addr}")
+    app.logger.info(f"Received user notes retrieve req from client: {request.remote_addr}")
     try:
         app.logger.info(f"Fetching notes for user {username}")
         response = session.get(f"{BACKEND_URL}/users/{username}/notes")
@@ -43,8 +43,10 @@ def get_user_notes(username):
         if response.status_code == 404:
             app.logger.error(f"User not found")
             abort(404, description=response.json().get('error', 'User not found'))
-        
-        app.logger.info(f"Notes fetched successfully")
+
+        if response.status_code == 200:
+            app.logger.info(f"Notes fetched successfully")
+            
         return make_response(response.json(), response.status_code) 
     except Exception as e:
         app.logger.error(f"Error fetching notes for user {username}: {e}")
@@ -56,9 +58,11 @@ def backup_note():
     try:
         note = request.json
         validate_note(note)
-        app.logger.info(f"Received note backup req from client: {note['server_metadata']['req_from']}@{request.remote_addr}")
+        app.logger.info(f"note: {note}")
+        app.logger.info(f"Received note backup req from client: {note['req_from']}@{request.remote_addr}")
 
         response = session.post(f"{BACKEND_URL}/backup_note", json=note, timeout=SERVER_TIMEOUT)
+        app.logger.info(f"Sent note from {request.remote_addr} to backend")
         
         if response.status_code == 403:
             app.logger.error(f"User not authorized to edit note")
@@ -72,7 +76,7 @@ def backup_note():
             app.logger.error(f"Failed to send note to backend. Response: {response.status_code}")
             abort(400, description=response.json().get('error', 'Invalid JSON'))
         
-        app.logger.info(f"Sent note from {request.remote_addr} to backend")
+        app.logger.info(f"Note saved successfully")
         return make_response(response.json(), response.status_code)
 
     except HTTPException as e:

@@ -1,31 +1,19 @@
 from sqlalchemy import Column, Integer, Text, ForeignKey
 from sqlalchemy.orm import relationship
 from db.connection import Base
+from models.note_version import NoteVersion
 
 class Note(Base):
     __tablename__ = 'notes'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    note_title = Column(Text, nullable=False, unique=True)
-    encrypted_note = Column(Text, nullable=False)
-    note_tag = Column(Text, nullable=False)
-    iv = Column(Text, nullable=False)
-    #version = Column(Integer, nullable=False)
-    #last_modified_by = Column(Integer, ForeignKey('users.id'), nullable=False)
+    note_title = Column(Text, nullable=False)
 
-    #last_modifier = relationship("User", foreign_keys=[last_modified_by], backref="modified_notes")
+    # Relationship with note versions
+    versions = relationship("NoteVersion", back_populates="note")
 
-    def to_dict(self):
-        return {
-            #"id": self.id,
-            "title": self.note_title,
-            "encrypted_note": self.encrypted_note,
-            "note_tag": self.note_tag,
-            "iv": self.iv,
-            #"version": self.version,
-            #"last_modified_by": self.last_modifier.username,
-        }
+    # Relationship with collaborators
+    collaborators = relationship("Collaborator", back_populates="note")
 
     def __repr__(self):
-        return f"<Note(id={self.id}, note_title={self.note_title}, last_modified_by={self.last_modifier.username},\
-                encrypted_note={self.encrypted_note}, note_tag={self.note_tag}, iv={self.iv})>"
+        return f"<Note(id={self.id}, note_title={self.note_title})>"
