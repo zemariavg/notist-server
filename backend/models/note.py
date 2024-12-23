@@ -10,10 +10,10 @@ class Note(Base):
     encrypted_note = Column(Text, nullable=False)
     note_tag = Column(Text, nullable=False)
     iv = Column(Text, nullable=False)
-    version = Column(Integer, nullable=False)
-    last_modified_by = Column(Integer, ForeignKey('users.id'), nullable=False)
+    #version = Column(Integer, nullable=False)
+    #last_modified_by = Column(Integer, ForeignKey('users.id'), nullable=False)
 
-    last_modifier = relationship("User", foreign_keys=[last_modified_by], backref="modified_notes")
+    #last_modifier = relationship("User", foreign_keys=[last_modified_by], backref="modified_notes")
 
     def to_dict(self):
         return {
@@ -22,8 +22,8 @@ class Note(Base):
             "encrypted_note": self.encrypted_note,
             "note_tag": self.note_tag,
             "iv": self.iv,
-            "version": self.version,
-            "last_modified_by": self.last_modifier.username,
+            #"version": self.version,
+            #"last_modified_by": self.last_modifier.username,
         }
 
     def __repr__(self):
