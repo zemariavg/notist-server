@@ -1,3 +1,4 @@
+from posix import makedev
 import requests
 import os
 import logging
@@ -27,29 +28,37 @@ def api_get_user(username):
         if response.status_code == 404:
             abort(404, description=response.json().get('error', 'User not found'))
 
-        return response.json(), response.status_code
+        return make_response(response.json(), response.status_code)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return make_response({"error": str(e)}, 500)
+
 
 @app.route('/users/<username>/notes', methods=['GET'])
 def get_user_notes(username):
+    app.logger.info(f"Received user notes req from client: {request.remote_addr}")
     try:
-        response = requests.get(f"{BACKEND_URL}/users/{username}/notes")
+        app.logger.info(f"Fetching notes for user {username}")
+        response = session.get(f"{BACKEND_URL}/users/{username}/notes")
 
         if response.status_code == 404:
+            app.logger.error(f"User not found")
             abort(404, description=response.json().get('error', 'User not found'))
-        return response.json(), response.status_code
+        
+        app.logger.info(f"Notes fetched successfully")
+        return make_response(response.json(), response.status_code) 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        app.logger.error(f"Error fetching notes for user {username}: {e}")
+        return make_response({"error": str(e)}, 500)
+        
 
-@app.route('/note', methods=['POST'])
+@app.route('/backup_note', methods=['POST'])
 def backup_note():
     try:
         note = request.json
         validate_note(note)
         app.logger.info(f"Received note backup req from client: {note['server_metadata']['req_from']}@{request.remote_addr}")
 
-        response = session.post(f"{BACKEND_URL}/note", json=note, timeout=SERVER_TIMEOUT)
+        response = session.post(f"{BACKEND_URL}/backup_note", json=note, timeout=SERVER_TIMEOUT)
         
         if response.status_code == 403:
             app.logger.error(f"User not authorized to edit note")

@@ -39,19 +39,20 @@ def get_user(username):
 @app.route('/users/<username>/notes', methods=['GET'])
 def get_user_notes(username):
     try:
+        app.logger.info(f"Received user notes req from client: {request.remote_addr}")
+        
         with next(get_db_session()) as session:
             user = get_user_by_username(session, username)
             if not user:
                 abort(404, description="User not found")
 
             user_notes = get_notes_by_user_id(session, user.id)
-            return jsonify(user_notes), 200
+            return make_response({"notes": [note.__repr__() for note in user_notes]}, 200)
     except Exception as e:
         app.logger.error(f"Error fetching notes for user {username}: {e}")
-        return jsonify({"error": "Internal server error"}), 500
+        return make_response({"error": str(e)}, 500)
 
-
-@app.route('/note', methods=['POST'])
+@app.route('/backup_note', methods=['POST'])
 def backup_note():
     try:
         app.logger.info(f"Received note backup req from client: {request.remote_addr}")
