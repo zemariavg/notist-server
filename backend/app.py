@@ -47,7 +47,7 @@ def get_user_notes(username):
                 abort(404, description="User not found")
 
             user_notes = get_notes_by_user_id(session, user.id)
-            return make_response({"notes": [note.__repr__() for note in user_notes]}, 200)
+            return jsonify(user_notes), 200
     except Exception as e:
         app.logger.error(f"Error fetching notes for user {username}: {e}")
         return make_response({"error": str(e)}, 500)
