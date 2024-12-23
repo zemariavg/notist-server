@@ -1,2 +1,4 @@
 *.env
 *__pycache__*
+*._DS_Store
+*.log
