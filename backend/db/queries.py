@@ -42,7 +42,7 @@ def fetch_notes_for_user(session: Session, user_id: int):
             "iv": iv,
             "encrypted_note": encrypted_note,
             "note_tag": note_tag,
-            "note_key": note_key
+            "ciphered_note_key": note_key
         }
         for note_title, iv, encrypted_note, note_tag, note_key in results
     ]
