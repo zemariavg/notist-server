@@ -39,14 +39,16 @@ def get_user(username):
 @app.route('/users/<username>/notes', methods=['GET'])
 def get_user_notes(username):
     try:
-        app.logger.info(f"Received user notes req from client: {request.remote_addr}")
+        app.logger.info(f"Received user notes retrieve req from client: {request.remote_addr}")
         
         with next(get_db_session()) as session:
             user = get_user_by_username(session, username)
             if not user:
                 abort(404, description="User not found")
-
-            user_notes = get_notes_by_user_id(session, user.id)
+                
+            user_notes = fetch_notes_for_user(session, user.id)
+            app.logger.info(f"Notes fetched for user {username}: {user_notes}")
+            app.logger.info(f"Notes fetched successfully")
             return jsonify(user_notes), 200
     except Exception as e:
         app.logger.error(f"Error fetching notes for user {username}: {e}")
@@ -72,17 +74,13 @@ def backup_note():
 
         return make_response({"Note saved successfully": note_id}, 201)
 
-    except HTTPException as e:  # Explicitly handle HTTP exceptions
+    except HTTPException as e:
         app.logger.error(f"HTTP error: {str(e)}")
         return make_response({"error": e.description}, e.code)
 
-    except SQLAlchemyError as e:
-        app.logger.error(f"Database error: {str(e)}")
-        return make_response({"error": str(e)}, 500)
-
     except Exception as e:
         app.logger.error(f"Internal server error: {str(e)}")
-        return make_response({"error": str(e)}, 500)
+        return make_response("Internal server error", 500)
 
 
 if __name__ == "__main__":
