@@ -62,7 +62,7 @@ def insert_new_note(session, note_data, logger):
         user_id=owner.id,
         note_id=new_note.id,
         role="owner",
-        note_key=note_data['note_key']
+        note_key=note_data['ciphered_note_key']
     )
     session.add(new_collaborator)
     return new_note.id

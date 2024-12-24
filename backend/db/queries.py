@@ -40,7 +40,7 @@ def fetch_notes_for_user(session: Session, user_id: int):
         {
             "title": note_title,
             "iv": iv,
-            "note": encrypted_note,
+            "encrypted_note": encrypted_note,
             "note_tag": note_tag,
             "note_key": note_key
         }
@@ -48,7 +48,7 @@ def fetch_notes_for_user(session: Session, user_id: int):
     ]
     
     if not notes:
-        return {"editor": [], "viewer": [], "owner": []}
+        return {"owner": [], "editor": [], "viewer": []}
     
     return notes
     

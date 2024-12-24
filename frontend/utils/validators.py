@@ -9,7 +9,7 @@ def validate_note(note):
         print(type(note))
         abort(400, description="Invalid JSON")
     
-    required_note_str_fields = ['title', 'iv', 'encrypted_note', 'note_tag', 'note_key', 'req_from']
+    required_note_str_fields = ['title', 'iv', 'encrypted_note', 'note_tag', 'ciphered_note_key', 'req_from']
     required_note_int_fields = ['version']
     
     if not validate_fields(note, required_note_str_fields, str) or not validate_fields(note, required_note_int_fields, int):
