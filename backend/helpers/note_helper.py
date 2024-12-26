@@ -1,6 +1,5 @@
 from flask import abort
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm.relationships import log
 from db.queries import *
 
 def handle_note_upsert(session: Session, note_data: dict, logger):
@@ -11,15 +10,16 @@ def handle_note_upsert(session: Session, note_data: dict, logger):
 
     if note_id is not None:
         note = fetch_latest_note_version_by_note_title(session, note_data['title'])
-        print(f"note: {note}")
+        logger.info(f"Note found. ID: {note.id}")
+        
         owner = get_user_by_username(session, note_data['req_from'])
-        print(f"owner: {owner}")
+        logger.info(f"Owner found: {owner}")
+        
         is_owner = check_owner_of_note(session, owner.id, note_id)
         is_editor = check_editor_of_note(session, owner.id, note_id)
-        print(f"is_owner: {is_owner}, is_editor: {is_editor}")
+        logger.info(f"Owner: {is_owner}, Editor: {is_editor}")
         
         if not (is_owner or is_editor):
-            print(f"owner: {is_owner}, editor: {is_editor}")
             logger.error("User not authorized to edit note")
             abort(403, description="User not authorized to edit note") 
             
@@ -34,7 +34,7 @@ def handle_note_upsert(session: Session, note_data: dict, logger):
 
 
 def update_existing_note(session: Session, note_id: int, note_version: NoteVersion, note_data: dict, logger):
-    logger.info(f"Adding new version to existing note: {note_id}")
+    logger.info(f"Adding new version {note_data['version']} to note {note_id}")
     
     new_note_version = NoteVersion(
         note_id=note_id,

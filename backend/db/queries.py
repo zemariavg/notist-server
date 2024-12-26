@@ -11,6 +11,14 @@ def get_user_by_username(session: Session, username: str) -> User:
         User.username == username
     ).first()
 
+def get_user_id_by_username(session: Session, username: str):
+    user = get_user_by_username(session, username)
+    
+    if user is None:
+        return None
+    
+    return user.id
+
 def fetch_note_id_by_title(session: Session, note_title: str):
     note = session.query(Note).filter(Note.note_title == note_title).first()
     

@@ -5,8 +5,8 @@ import logging
 from flask import Flask, jsonify, request, abort, make_response
 from werkzeug.exceptions import HTTPException
 from dotenv import load_dotenv
-from utils.validators import validate_note
-from utils.tls import get_p12_data
+from utils.validators import validate_note_backup_req, validate_add_collaborator_req
+from utils.tls import get_p12_data, delete_temp_files
 
 load_dotenv()
 BACKEND_URL = os.getenv("BACKEND_URL")
@@ -52,16 +52,49 @@ def get_user_notes(username):
         app.logger.error(f"Error fetching notes for user {username}: {e}")
         return make_response({"error": str(e)}, 500)
         
+@app.route('/users/<username>/pub_key', methods=['GET'])
+def get_user_pub_key(username):
+    app.logger.info(f"Received user public key req from client: {request.remote_addr}")
+    try:
+        response = session.get(f"{BACKEND_URL}/users/{username}/pub_key", timeout=SERVER_TIMEOUT)
+
+        if response.status_code == 404:
+            app.logger.error(f"User not found")
+            abort(404, description=response.json().get('error', 'User not found'))
+        app.logger.info(f"User found: {response.json()}")
+        return make_response(response.json(), response.status_code)
+    except Exception as e:
+        app.logger.error(f"Error fetching public key for user {username}: {e}")
+        return make_response({"error": str(e)}, 500)
+        
+@app.route('/add_collaborator', methods=['POST'])
+def add_colaborator():
+    app.logger.info(f"Received add colaborator req from client: {request.remote_addr}")
+    try:
+        validate_add_collaborator_req(request.json)
+        response = session.post(f"{BACKEND_URL}/add_collaborator", json=request.json, timeout=SERVER_TIMEOUT)
+        
+        if response.status_code == 404:
+            app.logger.error(f"User not found")
+            abort(404, description=response.json().get('error', 'User not found'))
+        
+        if response.status_code == 201:
+            app.logger.info(f"User added as collaborator successfully")
+            
+        return make_response(response.json(), response.status_code)
+    except Exception as e:
+        app.logger.error(f"Error adding colaborator: {e}")
+        return make_response({"error": str(e)}, 500)
 
 @app.route('/backup_note', methods=['POST'])
 def backup_note():
+    app.logger.info(f"Received note backup req from client: {request.remote_addr}")
     try:
-        note = request.json
-        validate_note(note)
-        app.logger.info(f"note: {note}")
-        app.logger.info(f"Received note backup req from client: {note['req_from']}@{request.remote_addr}")
+        validate_note_backup_req(request.json)
+        app.logger.info(f"note: {request.json}")
+        app.logger.info(f"Received note backup req from client: {request.json['req_from']}@{request.remote_addr}")
 
-        response = session.post(f"{BACKEND_URL}/backup_note", json=note, timeout=SERVER_TIMEOUT)
+        response = session.post(f"{BACKEND_URL}/backup_note", json=request.json, timeout=SERVER_TIMEOUT)
         app.logger.info(f"Sent note from {request.remote_addr} to backend")
         
         if response.status_code == 403:
@@ -105,4 +138,9 @@ if __name__ == "__main__":
     session.verify = be_cert
     app.logger.info("Certificates loaded successfully")
     
-    app.run(host=FE_HOST, port=FE_PORT, ssl_context=ssl_context)
+    temp_files = [fe_cert, fe_key, be_cert] 
+    
+    try:
+        app.run(host=FE_HOST, port=FE_PORT, ssl_context=ssl_context)
+    finally:
+        delete_temp_files(temp_files)  # Cleanup certificates
