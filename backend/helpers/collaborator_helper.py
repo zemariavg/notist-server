@@ -1,6 +1,5 @@
 from flask import abort, request
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.sql.operators import collate
 from db.queries import *
 
 def handle_collaborator_upsert(session: Session, request_data: dict, logger):

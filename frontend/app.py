@@ -1,4 +1,3 @@
-from posix import makedev
 import requests
 import os
 import logging
