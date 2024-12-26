@@ -11,32 +11,47 @@ from db.queries import *
 from db.connection import get_db_session
 from helpers.note_helper import handle_note_upsert
 from utils.tls import get_p12_data
+#from flask_bcrypt import Bcrypt
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+
 
 load_dotenv()
 BE_HOST = os.getenv("BE_HOST")
 BE_PORT = os.getenv("BE_PORT")
 P12_PATH = os.getenv("P12_PATH")
 P12_PWD = os.getenv("P12_PWD")
+os.getenv("JWT_SECRET_KEY")
 
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
+app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY")
+#bcrypt = Bcrypt(app)
+jwt = JWTManager(app)
 
-@app.route('/users/<username>', methods=['GET'])
-def get_user(username):
-    app.logger.info(f"Received user info req from client: {request.remote_addr}")
+"""
+def verify_password(user, password):
+    #return bcrypt.check_password_hash(user.password_hash, password)
+"""
+
+@app.route('/login', methods=['POST']) # login is POST request so that credential are in the req body not the url
+def login():
     try:
         with next(get_db_session()) as session:
-            user = get_user_by_username(session, username)
-            app.logger.info(f"User found: {user}")
-            if user is None:
-                abort(404, description="User not found")
-                
-            return make_response({"user": user.__repr__()}, 200)
+            data = request.get_json()
+
+            user = get_user_by_username(session, data['username'])
+            if not user or not user.password_hash == data['password']: #verify_password(user, data['password']):
+                return jsonify({'message': 'Invalid credentials'}), 401
+
+            # Create JWT token
+            token = create_access_token(identity=user.id)
+            return jsonify({'token': token}), 200
     except Exception as e:
-        app.logger.error(f"Internal server error: {str(e)}")
-        return make_response({"error": str(e)}, 500)
+        app.logger.error(f"login: {str(e)}")
+        return make_response("Internal Server Error", 500)
 
 @app.route('/users/<username>/notes', methods=['GET'])
+@jwt_required()
 def get_user_notes(username):
     try:
         app.logger.info(f"Received user notes retrieve req from client: {request.remote_addr}")
@@ -51,10 +66,11 @@ def get_user_notes(username):
             app.logger.info(f"Notes fetched successfully")
             return jsonify(user_notes), 200
     except Exception as e:
-        app.logger.error(f"Error fetching notes for user {username}: {e}")
-        return make_response({"error": str(e)}, 500)
+        app.logger.error(f"get_user_notes: Error fetching notes for user {username}: {e}")
+        return make_response("Internal Server Error", 500)
 
 @app.route('/backup_note', methods=['POST'])
+@jwt_required()
 def backup_note():
     try:
         app.logger.info(f"Received note backup req from client: {request.remote_addr}")
@@ -79,8 +95,8 @@ def backup_note():
         return make_response({"error": e.description}, e.code)
 
     except Exception as e:
-        app.logger.error(f"Internal server error: {str(e)}")
-        return make_response("Internal server error", 500)
+        app.logger.error(f"backup_note: Internal server error: {str(e)}")
+        return make_response("Internal Server Error", 500)
 
 
 if __name__ == "__main__":

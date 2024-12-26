@@ -8,6 +8,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(255), nullable=False)
     password_hash = Column(Text, nullable=False)
+    #password_salt = Column(String(255), nullable=False)
     public_key = Column(Text, nullable=False)
 
     # Relationship with notes as collaborators
