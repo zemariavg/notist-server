@@ -32,11 +32,35 @@ def fetch_latest_note_version_by_note_title(session: Session, note_title: str) -
         Note.note_title == note_title
     ).order_by(desc(NoteVersion.version)).first() 
 
-def fetch_note_version_by_title_and_version(session: Session, note_title: str, version: int) -> NoteVersion:
-    return session.query(NoteVersion).join(Note).filter(
-        Note.note_title == note_title,
-        NoteVersion.version == version
-    ).first()
+def fetch_specific_note_version(session: Session, user_id: int, note_title: str, note_version: int):
+    result = (
+        session.query(
+            Note.note_title,
+            NoteVersion.iv,
+            NoteVersion.encrypted_note,
+            NoteVersion.note_tag,
+            Collaborator.note_key
+        )
+        .join(Collaborator, Collaborator.note_id == Note.id)  # Join with collaborators
+        .join(NoteVersion, NoteVersion.note_id == Note.id)  # Join with NoteVersion
+        .filter(
+            Note.note_title == note_title,  # Filter by note title
+            NoteVersion.version == note_version,  # Filter by note version
+            Collaborator.user_id == user_id  # Filter by user ID (must be owner/editor/viewer)
+        )
+        .first()  # Fetch the first (and only) result
+    )
+
+    if not result:
+        return None  
+
+    return {
+        "title": result.note_title,
+        "iv": result.iv,
+        "encrypted_note": result.encrypted_note,
+        "note_tag": result.note_tag,
+        "ciphered_note_key": result.note_key
+    }
 
 def fetch_notes_for_user(session: Session, user_id: int):
     latest_version_subquery = (

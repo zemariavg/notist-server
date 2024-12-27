@@ -69,6 +69,25 @@ def get_user_pub_key(username):
     except Exception as e:
         app.logger.error(f"Internal server error: {str(e)}")
         return make_response({"error": str(e)}, 500)
+
+@app.route('/users/<username>/notes/<note_title>/<version>', methods=['GET'])
+def get_user_note_version(username, note_title, version):
+    app.logger.info(f"Received user note version retrieve req from client: {request.remote_addr}")
+    try:
+        with next(get_db_session()) as session:
+            user = get_user_by_username(session, username)
+            if not user:
+                abort(404, description="User not found")
+                
+            note = fetch_specific_note_version(session, user.id, note_title, version)
+            if not note:
+                abort(404, description="Note not found")
+                
+            app.logger.info(f"Note fetched successfully")
+            return jsonify(note), 200
+    except Exception as e:
+        app.logger.error(f"Error fetching note {note_title} for user {username}: {e}")
+        return make_response({"error": str(e)}, 500)
     
 @app.route('/add_collaborator', methods=['POST'])
 def add_collaborator():

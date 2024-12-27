@@ -50,6 +50,26 @@ def get_user_notes(username):
     except Exception as e:
         app.logger.error(f"Error fetching notes for user {username}: {e}")
         return make_response({"error": str(e)}, 500)
+
+@app.route('/users/<username>/notes/<note_title>/<version>', methods=['GET'])
+def get_user_note_version(username, note_title, version):
+    app.logger.info(f"Received user note version retrieve req from client: {request.remote_addr}")
+    try:
+        app.logger.info(f"Fetching note {note_title} for user {username}")
+        response = session.get(f"{BACKEND_URL}/users/{username}/notes/{note_title}/{version}", timeout=SERVER_TIMEOUT)
+
+        if response.status_code == 404:
+            app.logger.error(f"Note not found")
+            abort(404, description=response.json().get('error', 'Note not found'))
+
+        if response.status_code == 200:
+            app.logger.info(f"Note fetched successfully")
+            print(response.json())
+            
+        return make_response(response.json(), response.status_code)
+    except Exception as e:
+        app.logger.error(f"Error fetching note {note_title} for user {username}: {e}")
+        return make_response({"error": str(e)}, 500)
         
 @app.route('/users/<username>/pub_key', methods=['GET'])
 def get_user_pub_key(username):
