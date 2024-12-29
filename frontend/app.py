@@ -18,26 +18,26 @@ P12_PWD = os.getenv("P12_PWD")
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 
-@app.route('/api/users/<username>', methods=['GET'])
-def api_get_user(username):
-    app.logger.info(f"Received user info req from client: {request.remote_addr}")
+@app.route('/login', methods=['POST'])
+def login():
     try:
-        response = session.get(f"{BACKEND_URL}/users/{username}", timeout=SERVER_TIMEOUT)
+        data = request.get_json()
 
-        if response.status_code == 404:
-            abort(404, description=response.json().get('error', 'User not found'))
-
+        if not data or not data.get('username') or not data.get('password'):
+            return jsonify({'message': 'Username and password are required!'}), 400
+        response = session.post(f"{BACKEND_URL}/login", json=data, timeout=SERVER_TIMEOUT)
         return make_response(response.json(), response.status_code)
-    except Exception as e:
-        return make_response({"error": str(e)}, 500)
 
+    except Exception as e:
+        app.logger.error(f"login: {str(e)}")
+        return make_response("Internal Server Error", 500)
 
 @app.route('/users/<username>/notes', methods=['GET'])
 def get_user_notes(username):
     app.logger.info(f"Received user notes retrieve req from client: {request.remote_addr}")
     try:
         app.logger.info(f"Fetching notes for user {username}")
-        response = session.get(f"{BACKEND_URL}/users/{username}/notes")
+        response = session.get(f"{BACKEND_URL}/users/{username}/notes", headers=request.headers)
 
         if response.status_code == 404:
             app.logger.error(f"User not found")
