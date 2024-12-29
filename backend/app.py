@@ -51,7 +51,6 @@ def login():
         return make_response("Internal Server Error", 500)
 
 @app.route('/users/<username>/notes', methods=['GET'])
-@jwt_required()
 def get_user_notes(username):
     try:
         app.logger.info(f"Received user notes retrieve req from client: {request.remote_addr}")
@@ -132,7 +131,6 @@ def add_collaborator():
     
 
 @app.route('/backup_note', methods=['POST'])
-@jwt_required()
 def backup_note():
     app.logger.info(f"Received note backup req from client: {request.remote_addr}")
     try:

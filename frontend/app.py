@@ -6,6 +6,7 @@ from werkzeug.exceptions import HTTPException
 from dotenv import load_dotenv
 from utils.validators import validate_note_backup_req, validate_add_collaborator_req
 from utils.tls import get_p12_data, delete_temp_files
+from flask_jwt_extended import jwt_required, JWTManager,  get_jwt_identity
 
 load_dotenv()
 BACKEND_URL = os.getenv("BACKEND_URL")
@@ -16,7 +17,8 @@ P12_PATH = os.getenv("P12_PATH")
 P12_PWD = os.getenv("P12_PWD")
 
 app = Flask(__name__)
-app.config['JSON_SORT_KEYS'] = False
+app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY")
+jwt = JWTManager(app)
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -107,8 +109,10 @@ def add_colaborator():
 
 @app.route('/backup_note', methods=['POST'])
 def backup_note():
+    print(f"received headers: {request.headers}")
     app.logger.info(f"Received note backup req from client: {request.remote_addr}")
     try:
+        print(f"received headers: {request.headers}")
         validate_note_backup_req(request.json)
         app.logger.info(f"note: {request.json}")
         app.logger.info(f"Received note backup req from client: {request.json['req_from']}@{request.remote_addr}")
