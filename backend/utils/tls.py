@@ -1,4 +1,5 @@
 import tempfile
+import os
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization import pkcs12
@@ -28,3 +29,13 @@ def get_p12_data(p12_path: str, p12_pwd: str) -> tuple[str, str, str]:
 
     return (cert_file.name, key_file.name, other_certs_file.name)
     
+def delete_temp_files(temp_files: list):
+    """Delete temporary files."""
+    for temp_file in temp_files:
+        try:
+            os.unlink(temp_file)
+            print(f"Deleted temp file: {temp_file}")
+        except FileNotFoundError:
+            print(f"Temp file not found (already deleted): {temp_file}")
+        except Exception as e:
+            print(f"Error deleting temp file {temp_file}: {e}")
