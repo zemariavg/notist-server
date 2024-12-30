@@ -140,10 +140,6 @@ def backup_note():
         app.logger.info(f"note: {note}")
         app.logger.info(f"Received note backup req from client: {headers['req_from']}@{request.remote_addr}")
 
-        validate_note_backup_req(request.json)
-        app.logger.info(f"note: {request.json}")
-        app.logger.info(f"Received note backup req from client: {request.json['req_from']}@{request.remote_addr}")
-
         response = session.post(f"{BACKEND_URL}/backup_note", json=note, timeout=SERVER_TIMEOUT, headers=headers)
         app.logger.info(f"Sent note from {request.remote_addr} to backend")
 
@@ -180,6 +176,7 @@ def backup_note():
 
 
 @app.route('/create_note', methods=['POST'])
+@jwt_required()
 def create_note():
     try:
         note = request.json
