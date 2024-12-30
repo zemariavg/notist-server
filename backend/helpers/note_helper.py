@@ -1,29 +1,24 @@
 from flask import abort
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm.relationships import log
 from db.queries import *
 
 def handle_note_upsert(session: Session, note_data: dict, headers: dict, logger):
     logger.info(f"Handling note upsert: {note_data}")
     note_id = fetch_note_id_by_title(session, note_data['title'])
-    
-    logger.info(f"Note found. id: {note_id}")
 
     if note_id is not None:
         note = fetch_latest_note_version_by_note_title(session, note_data['title'])
-        print(f"note: {note}")
+        logger.info(f"Note found. is: {note.id}")
         owner = get_user_by_username(session, headers['req_from'])
-        print(f"owner: {owner}")
+        logger.info(f"Owner found: {owner}")
         is_owner = check_owner_of_note(session, owner.id, note_id)
         is_editor = check_editor_of_note(session, owner.id, note_id)
-        print(f"is_owner: {is_owner}, is_editor: {is_editor}")
-
-        if not(is_owner or is_editor):
-            print(f"owner: {is_owner}, editor: {is_editor}")
+        logger.info(f"Owner: {is_owner}, Editor: {is_editor}")
+        
+        if not (is_owner or is_editor):
             logger.error("User has no write permissions")
-            abort(403, description="User has no write permissions")
+            abort(403, description="User has no write permissions") 
 
-        print(int(headers['version']), note.version)
         if int(headers['version']) < note.version:
             logger.error("Trying to update with outdated version")
             abort(405, description="Trying to update with outdated version")
@@ -37,7 +32,7 @@ def handle_note_upsert(session: Session, note_data: dict, headers: dict, logger)
 
 
 def update_existing_note(session: Session, note_id: int, note_data: dict, headers: dict, logger):
-    logger.info(f"Adding new version to existing note: {note_id}")
+    logger.info(f"Adding new version {note_data['version']} to note {note_id}")
     
     new_note_version = NoteVersion(
         note_id=note_id,
