@@ -1,12 +1,18 @@
+from enum import verify
+from posixpath import curdir
+import secrets
 import requests
 import os
 import logging
 from flask import Flask, jsonify, request, abort, make_response
+from sqlalchemy.engine.util import _C
+from sqlalchemy.sql.operators import op
 from werkzeug.exceptions import HTTPException
 from dotenv import load_dotenv
 from utils.validators import validate_note_backup_req, validate_add_collaborator_req
 from utils.tls import get_p12_data, delete_temp_files
-from flask_jwt_extended import jwt_required, JWTManager,  get_jwt_identity
+from flask_jwt_extended import jwt_required, JWTManager
+import jwt
 
 load_dotenv()
 BACKEND_URL = os.getenv("BACKEND_URL")
@@ -18,28 +24,44 @@ P12_PWD = os.getenv("P12_PWD")
 
 app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY")
-jwt = JWTManager(app)
+jwtmanager = JWTManager(app)
 
 @app.route('/login', methods=['POST'])
 def login():
+    app.logger.info(f"Received login req from client: {request.remote_addr}")
     try:
         data = request.get_json()
 
         if not data or not data.get('username') or not data.get('password'):
+            app.logger.error("Username and password are required")
             return jsonify({'message': 'Username and password are required!'}), 400
+            
+        app.logger.info(f"Logging in user {data['username']}")
         response = session.post(f"{BACKEND_URL}/login", json=data, timeout=SERVER_TIMEOUT)
+        
+        if response.status_code == 401:
+            app.logger.error("Invalid credentials")
+            return jsonify({'message': 'Invalid credentials'}), 401
+            
+        if response.status_code == 200:
+            app.logger.info("User authenticated")
+            return make_response(response.json(), response.status_code)
+        
         return make_response(response.json(), response.status_code)
 
     except Exception as e:
         app.logger.error(f"login: {str(e)}")
         return make_response("Internal Server Error", 500)
+    
 
 @app.route('/users/<username>/notes', methods=['GET'])
+@jwt_required()
 def get_user_notes(username):
     app.logger.info(f"Received user notes retrieve req from client: {request.remote_addr}")
+
     try:
         app.logger.info(f"Fetching notes for user {username}")
-        response = session.get(f"{BACKEND_URL}/users/{username}/notes", headers=request.headers)
+        response = session.get(f"{BACKEND_URL}/users/{username}/notes")
 
         if response.status_code == 404:
             app.logger.error(f"User not found")
@@ -74,6 +96,7 @@ def get_user_note_version(username, note_title, version):
         return make_response({"error": str(e)}, 500)
         
 @app.route('/users/<username>/pub_key', methods=['GET'])
+@jwt_required()
 def get_user_pub_key(username):
     app.logger.info(f"Received user public key req from client: {request.remote_addr}")
     try:
@@ -89,6 +112,7 @@ def get_user_pub_key(username):
         return make_response({"error": str(e)}, 500)
         
 @app.route('/add_collaborator', methods=['POST'])
+@jwt_required()
 def add_colaborator():
     app.logger.info(f"Received add colaborator req from client: {request.remote_addr}")
     try:
@@ -108,11 +132,10 @@ def add_colaborator():
         return make_response({"error": str(e)}, 500)
 
 @app.route('/backup_note', methods=['POST'])
+@jwt_required()
 def backup_note():
-    print(f"received headers: {request.headers}")
     app.logger.info(f"Received note backup req from client: {request.remote_addr}")
     try:
-        print(f"received headers: {request.headers}")
         validate_note_backup_req(request.json)
         app.logger.info(f"note: {request.json}")
         app.logger.info(f"Received note backup req from client: {request.json['req_from']}@{request.remote_addr}")

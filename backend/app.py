@@ -3,7 +3,7 @@ import logging
 import requests
 from dotenv import load_dotenv
 
-from flask import Flask, abort, request, make_response, jsonify
+from flask import Flask, abort, current_app, request, make_response, jsonify
 from flask.typing import AppOrBlueprintKey
 from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.exceptions import HTTPException
@@ -20,12 +20,9 @@ BE_HOST = os.getenv("BE_HOST")
 BE_PORT = os.getenv("BE_PORT")
 P12_PATH = os.getenv("P12_PATH")
 P12_PWD = os.getenv("P12_PWD")
-os.getenv("JWT_SECRET_KEY")
 
 app = Flask(__name__)
-app.config['JSON_SORT_KEYS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY")
-#bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
 """
@@ -33,18 +30,24 @@ def verify_password(user, password):
     #return bcrypt.check_password_hash(user.password_hash, password)
 """
 
-@app.route('/login', methods=['POST']) # login is POST request so that credential are in the req body not the url
+@app.route('/login', methods=['POST'])
 def login():
+    app.logger.info(f"Received login req from client: {request.remote_addr}")
     try:
         with next(get_db_session()) as session:
             data = request.get_json()
-
+            
             user = get_user_by_username(session, data['username'])
-            if not user or not user.password_hash == data['password']: #verify_password(user, data['password']):
+            app.logger.info(f"Logging in user {data['username']}")
+            if not user or not user.password_hash == data['password']:
+                app.logger.error("Invalid credentials")
                 return jsonify({'message': 'Invalid credentials'}), 401
 
             # Create JWT token
-            token = create_access_token(identity=user.id)
+            app.logger.info("User authenticated")
+            token = create_access_token(identity=user.username)
+            
+            app.logger.info(f"Token generated: {token}")
             return jsonify({'token': token}), 200
     except Exception as e:
         app.logger.error(f"login: {str(e)}")
@@ -52,9 +55,9 @@ def login():
 
 @app.route('/users/<username>/notes', methods=['GET'])
 def get_user_notes(username):
+    app.logger.info(f"Received user notes retrieve req from client: {request.remote_addr}")
+    
     try:
-        app.logger.info(f"Received user notes retrieve req from client: {request.remote_addr}")
-        
         with next(get_db_session()) as session:
             user = get_user_by_username(session, username)
             if not user:
