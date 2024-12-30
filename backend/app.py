@@ -9,7 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.exceptions import HTTPException
 from db.queries import *
 from db.connection import get_db_session
-from helpers.note_helper import handle_note_upsert
+from helpers.note_helper import handle_note_upsert, insert_new_note
 from utils.tls import get_p12_data
 #from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
@@ -76,15 +76,17 @@ def backup_note():
         app.logger.info(f"Received note backup req from client: {request.remote_addr}")
 
         note_data = request.json
+        headers = request.headers
         if not note_data:
             app.logger.error("Invalid input: No JSON data received")
             abort(400, description="Invalid input: No JSON data received")
 
         with next(get_db_session()) as dbsession:
             try:
-                note_id = handle_note_upsert(dbsession, note_data, app.logger)
+                note_id = handle_note_upsert(dbsession, note_data, headers, app.logger)
                 dbsession.commit()
             except SQLAlchemyError:
+                print("SQLAlchemy Rollback")
                 dbsession.rollback()
                 raise
 
@@ -98,6 +100,34 @@ def backup_note():
         app.logger.error(f"backup_note: Internal server error: {str(e)}")
         return make_response("Internal Server Error", 500)
 
+@app.route('/create_note', methods=['POST'])
+def create_note():
+    try:
+        app.logger.info(f"Received create note req from client: {request.remote_addr}")
+
+        note_data = request.json
+        headers = request.headers
+        if not note_data:
+            app.logger.error("Invalid input: No JSON data received")
+            abort(405, description="Invalid input: No JSON data received")
+
+        with next(get_db_session()) as dbsession:
+            try:
+                note_id = insert_new_note(dbsession, note_data, headers, app.logger)
+                dbsession.commit()
+            except SQLAlchemyError:
+                dbsession.rollback()
+                raise
+
+        return make_response({"Note created successfully": note_id}, 201)
+
+    except HTTPException as e:
+        app.logger.error(f"HTTP error: {str(e)}")
+        return make_response({"error": e.description}, e.code)
+
+    except Exception as e:
+        app.logger.error(f"Internal server error: {str(e)}")
+        return make_response("Internal server error", 500)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s",
