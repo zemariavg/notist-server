@@ -3,11 +3,11 @@ import requests
 import os
 import logging
 from flask import Flask, jsonify, request, abort, make_response
-from sqlalchemy.engine.util import _C
+#from sqlalchemy.engine.util import _C
 from sqlalchemy.sql.operators import op
 from werkzeug.exceptions import HTTPException
 from dotenv import load_dotenv
-from utils.validators import validate_note_backup_req, validate_add_collaborator_req, validate_note, check_version
+from utils.validators import validate_add_collaborator_req, validate_note, check_version
 from utils.tls import get_p12_data, delete_temp_files
 from flask_jwt_extended import jwt_required, JWTManager
 import jwt
