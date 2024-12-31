@@ -91,7 +91,7 @@ def get_user_pub_key(username):
 
 @app.route('/users/<username>/notes/<note_title>/<version>', methods=['GET'])
 def get_user_note_version(username, note_title, version):
-    app.logger.info(f"Received user note version retrieve req from client: {request.remote_addr}")
+    app.logger.info(f"Received user note version retrieve req from client: {username}@{request.remote_addr}")
     try:
         with next(get_db_session()) as session:
             user = get_user_by_username(session, username)
@@ -108,9 +108,9 @@ def get_user_note_version(username, note_title, version):
         app.logger.error(f"Error fetching note {note_title} for user {username}: {e}")
         return make_response({"error": str(e)}, 500)
     
-@app.route('/add_collaborator', methods=['POST'])
-def add_collaborator():
-    app.logger.info(f"Received add collaborator req from client: {request.remote_addr}")
+@app.route('/users/<username>/add_collaborator', methods=['POST'])
+def add_collaborator(username):
+    app.logger.info(f"Received add collaborator req from client: {username}@{request.remote_addr}")
     try:
         if request.json is None:
             app.logger.error("Invalid input: No JSON data received")
@@ -118,7 +118,7 @@ def add_collaborator():
          
         with next(get_db_session()) as dbsession:
             try:
-                handle_collaborator_upsert(dbsession, request.json, app.logger)
+                handle_collaborator_upsert(dbsession, username, request.json, app.logger)
                 dbsession.commit()
             except SQLAlchemyError:
                 app.logger.error("An error occurred, rolling back changes.")
