@@ -136,20 +136,20 @@ def add_collaborator(username):
         return make_response("Internal server error", 500) 
     
 
-@app.route('/backup_note', methods=['POST'])
-def backup_note():
-    app.logger.info(f"Received note backup req from client: {request.remote_addr}")
+@app.route('/users/<username>/backup_note', methods=['POST'])
+def backup_note(username):
+    app.logger.info(f"Received note backup req from client: {username}@{request.remote_addr}")
     try:
 
         note_data = request.json
-        headers = request.headers
+
         if not note_data:
             app.logger.error("Invalid input: No JSON data received")
             abort(400, description="Invalid input: No JSON data received")
 
         with next(get_db_session()) as dbsession:
             try:
-                note_id = handle_note_upsert(dbsession, note_data, headers, app.logger)
+                note_id = handle_note_upsert(dbsession, note_data, username, request.headers, app.logger)
                 dbsession.commit()
             except SQLAlchemyError:
                 app.logger.error("An error occurred, rolling back changes.")
@@ -166,20 +166,20 @@ def backup_note():
         app.logger.error(f"backup_note: Internal server error: {str(e)}")
         return make_response("Internal Server Error", 500)
 
-@app.route('/create_note', methods=['POST'])
-def create_note():
+@app.route('/users/<username>/create_note', methods=['POST'])
+def create_note(username):
     try:
-        app.logger.info(f"Received create note req from client: {request.remote_addr}")
+        app.logger.info(f"Received create note req from client: {username}@{request.remote_addr}")
 
         note_data = request.json
-        headers = request.headers
+
         if not note_data:
             app.logger.error("Invalid input: No JSON data received")
             abort(405, description="Invalid input: No JSON data received")
 
         with next(get_db_session()) as dbsession:
             try:
-                note_id = insert_new_note(dbsession, note_data, headers, app.logger)
+                note_id = insert_new_note(dbsession, note_data, username, app.logger)
                 dbsession.commit()
             except SQLAlchemyError:
                 dbsession.rollback()

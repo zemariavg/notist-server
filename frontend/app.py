@@ -1,12 +1,12 @@
 import requests
 import os
 import logging
-from flask import Flask, jsonify, request, abort, make_response
+from flask import Flask, current_app, jsonify, request, abort, make_response
 from werkzeug.exceptions import HTTPException
 from dotenv import load_dotenv
 from utils.validators import validate_add_collaborator_req, validate_note, check_version
 from utils.tls import get_p12_data, delete_temp_files
-from flask_jwt_extended import jwt_required, JWTManager, get_jwt_identity
+from flask_jwt_extended import current_user, jwt_required, JWTManager, get_jwt_identity
 import jwt
 
 load_dotenv()
@@ -133,14 +133,16 @@ def add_colaborator():
 @jwt_required()
 def backup_note():
     app.logger.info(f"Received note backup req from client: {request.remote_addr}")
+    current_user = get_jwt_identity()
+    app.logger.info(f"Current user: {current_user}")
+    
     try:
         note = request.json
-        headers = request.headers
-        validate_note(note, headers)
-        app.logger.info(f"note: {note}")
-        app.logger.info(f"Received note backup req from client: {headers['req_from']}@{request.remote_addr}")
+        validate_note(note, request.headers)
 
-        response = session.post(f"{BACKEND_URL}/backup_note", json=note, timeout=SERVER_TIMEOUT, headers=headers)
+        app.logger.info(f"Received note backup req from client: {current_user}@{request.remote_addr}")
+
+        response = session.post(f"{BACKEND_URL}/users/{current_user}/backup_note", json=note, timeout=SERVER_TIMEOUT, headers=request.headers)
         app.logger.info(f"Sent note from {request.remote_addr} to backend")
 
         if response.status_code == 401:
@@ -178,16 +180,18 @@ def backup_note():
 @app.route('/create_note', methods=['POST'])
 @jwt_required()
 def create_note():
+    app.logger.info(f"Received create note req from client: {request.remote_addr}")
+    current_user = get_jwt_identity()
+    app.logger.info(f"Current user: {current_user}")
+    
     try:
         note = request.json
         headers = request.headers
-        app.logger.info(f"Received headers: {request.headers}")
         validate_note(note, headers)
         check_version(headers)
         app.logger.info(f"note: {note}")
-        app.logger.info(f"Received create note req from client: {headers['req_from']}@{request.remote_addr}")
 
-        response = session.post(f"{BACKEND_URL}/create_note", json=note, timeout=SERVER_TIMEOUT, headers=headers)
+        response = session.post(f"{BACKEND_URL}/users/{current_user}/create_note", json=note, timeout=SERVER_TIMEOUT, headers=headers)
         app.logger.info(f"Sent note from {request.remote_addr} to backend")
 
         if response.status_code == 401:
