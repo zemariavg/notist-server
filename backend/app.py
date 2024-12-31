@@ -42,9 +42,10 @@ def login():
             
             user = get_user_by_username(session, data['username'])
             app.logger.info(f"Logging in user {data['username']}")
+
             if not user or not user.password_hash == data['password']:
                 app.logger.error("Invalid credentials")
-                return jsonify({'message': 'Invalid credentials'}), 401
+                return jsonify({'message': 'Invalid credentials'}), 406
 
             # Create JWT token
             app.logger.info("User authenticated")
