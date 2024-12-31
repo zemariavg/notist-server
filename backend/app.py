@@ -24,6 +24,7 @@ P12_PATH = os.getenv("P12_PATH")
 P12_PWD = os.getenv("P12_PWD")
 
 app = Flask(__name__)
+app.config['JSON_SORT_KEYS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY")
 jwt = JWTManager(app)
 
