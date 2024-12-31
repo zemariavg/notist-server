@@ -10,7 +10,7 @@ def validate_note(note, headers):
         abort(400, description="Invalid JSON")
 
     required_note_str_fields = ['title', 'iv', 'encrypted_note', 'note_tag', 'ciphered_note_key']
-    required_headers_str_fields = ['req_from', 'version']
+    required_headers_str_fields = ['version']
 
     if not (validate_fields(note, required_note_str_fields, str) or validate_fields(headers, required_headers_str_fields, str)):
         print("Failed to validate note/headers field types")

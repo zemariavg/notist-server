@@ -53,10 +53,24 @@ def verify_request(session: Session, username: str, request_data: dict, logger):
     if permission not in ['editor', 'viewer']:
         logger.error("Invalid permission. Collaborator permission must be 'editor' or 'viewer'")
         abort(400, description="Invalid permission. Collaborator permission must be 'editor' or 'viewer")
-
-    if check_editor_of_note(session, user_to_add_id, note_id) or check_viewer_of_note(session, user_to_add_id, note_id):
-        logger.error("User to add is already an editor or viewer")
-        abort(400, description="User to add is already an editor or viewer")
+        
+    if permission == 'editor' and check_editor_of_note(session, user_to_add_id, note_id):
+        logger.error("User to add is already an editor")
+        abort(400, description="User to add is already an editor")
+    
+    if permission == 'viewer' and check_viewer_of_note(session, user_to_add_id, note_id):
+        logger.error("User to add is already a viewer")
+        abort(400, description="User to add is already a viewer")
+    
+    # if editor and trying to be viewer, do not allow for now
+    if permission == 'viewer' and check_editor_of_note(session, user_to_add_id, note_id):
+        logger.error("User to add is already an editor and cannot be a viewer")
+        abort(400, description="User to add is already an editor and cannot be a viewer")
+        
+    # if viewer and trying to be editor, do not allow for now
+    if permission == 'editor' and check_viewer_of_note(session, user_to_add_id, note_id):
+        logger.error("User to add is already a viewer and cannot be an editor")
+        abort(400, description="User to add is already a viewer and cannot be an editor")
     
     note_version = fetch_latest_note_version_by_note_title(session, note_data['title'])
     if note_version.version >= note_data['version']:
