@@ -32,7 +32,7 @@ def handle_note_upsert(session: Session, note_data: dict, headers: dict, logger)
 
 
 def update_existing_note(session: Session, note_id: int, note_data: dict, headers: dict, logger):
-    logger.info(f"Adding new version {note_data['version']} to note {note_id}")
+    logger.info(f"Adding new version {headers['version']} to note {note_id}")
     
     new_note_version = NoteVersion(
         note_id=note_id,
