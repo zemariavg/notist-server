@@ -1,15 +1,12 @@
-from posix import makedev
 import requests
 import os
 import logging
 from flask import Flask, jsonify, request, abort, make_response
-#from sqlalchemy.engine.util import _C
-from sqlalchemy.sql.operators import op
 from werkzeug.exceptions import HTTPException
 from dotenv import load_dotenv
 from utils.validators import validate_add_collaborator_req, validate_note, check_version
 from utils.tls import get_p12_data, delete_temp_files
-from flask_jwt_extended import jwt_required, JWTManager
+from flask_jwt_extended import jwt_required, JWTManager, get_jwt_identity
 import jwt
 
 load_dotenv()
@@ -113,9 +110,12 @@ def get_user_pub_key(username):
 @jwt_required()
 def add_colaborator():
     app.logger.info(f"Received add colaborator req from client: {request.remote_addr}")
+    current_user = get_jwt_identity()
+    app.logger.info(f"Current user: {current_user}")
+
     try:
         validate_add_collaborator_req(request.json)
-        response = session.post(f"{BACKEND_URL}/add_collaborator", json=request.json, timeout=SERVER_TIMEOUT)
+        response = session.post(f"{BACKEND_URL}/users/{current_user}/add_collaborator", json=request.json, timeout=SERVER_TIMEOUT)
 
         if response.status_code == 404:
             app.logger.error(f"User not found")
@@ -181,6 +181,7 @@ def create_note():
     try:
         note = request.json
         headers = request.headers
+        app.logger.info(f"Received headers: {request.headers}")
         validate_note(note, headers)
         check_version(headers)
         app.logger.info(f"note: {note}")

@@ -2,10 +2,10 @@ from flask import abort, request
 from sqlalchemy.exc import SQLAlchemyError
 from db.queries import *
 
-def handle_collaborator_upsert(session: Session, request_data: dict, logger):
-    logger.info(f"Handling collaborator upsert: {request_data['collaborator']}")
+def handle_collaborator_upsert(session: Session, username: str, request_data: dict, logger):
+    logger.info(f"Handling collaborator upsert: {username} is trying to add {request_data['collaborator']} as {request_data['permission']}")
 
-    user_to_add_id, note_id, note_version = verify_request(session, request_data, logger)
+    user_to_add_id, note_id, note_version = verify_request(session, username, request_data, logger)
     
     new_note_version = create_new_note_version(session, note_id, request_data['note'])
     logger.info(f"Received note: {request_data['note']}")
@@ -22,7 +22,7 @@ def handle_collaborator_upsert(session: Session, request_data: dict, logger):
     logger.info(f"User {request_data['collaborator']} added as {request_data['permission']} successfully")
 
 
-def verify_request(session: Session, request_data: dict, logger):
+def verify_request(session: Session, username: str, request_data: dict, logger):
     collaborator_name = request_data['collaborator']
     note_data = request_data['note']
     permission = request_data['permission']
@@ -32,19 +32,28 @@ def verify_request(session: Session, request_data: dict, logger):
         logger.error("User to add as collaborator was not found")
         abort(404, description="User to add as collaborator was not found")
     
-    # TODO: When login is added, check if user is adding himself as collaborator
-    # TODO: When login is added, check if user sending request is the owner of the note. Only owners can add collaborators
-
+    user_request_id = get_user_id_by_username(session, username)
+    if user_request_id is None:
+        logger.error("User sending request not found")
+        abort(404, description="User sending request not found")
+        
+    if user_request_id == user_to_add_id:
+        logger.error("User cannot add himself as collaborator")
+        abort(400, description="User cannot add himself as collaborator")
+        
     note_id = fetch_note_id_by_title(session, note_data['title'])
     if note_id is None:
         logger.error("Note to add collaborator not found")
         abort(404, description="Note to add collaborator not found")
+     
+    if not check_owner_of_note(session, user_request_id, note_id):
+         logger.error("Non owner user trying to add collaborator.")
+         abort(400, description="Non owner user trying to add collaborator.")
     
     if permission not in ['editor', 'viewer']:
         logger.error("Invalid permission. Collaborator permission must be 'editor' or 'viewer'")
         abort(400, description="Invalid permission. Collaborator permission must be 'editor' or 'viewer")
 
-    # check if already user to add is already editor or viewer
     if check_editor_of_note(session, user_to_add_id, note_id) or check_viewer_of_note(session, user_to_add_id, note_id):
         logger.error("User to add is already an editor or viewer")
         abort(400, description="User to add is already an editor or viewer")
