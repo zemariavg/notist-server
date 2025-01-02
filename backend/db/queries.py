@@ -4,7 +4,6 @@ from models.note_version import NoteVersion
 from models.collaborator import Collaborator
 from sqlalchemy.orm.session import Session
 from sqlalchemy import desc, func
-from sqlalchemy.orm import aliased
 
 def get_user_by_username(session: Session, username: str) -> User:
     return session.query(User).filter(

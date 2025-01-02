@@ -4,17 +4,14 @@ import requests
 from dotenv import load_dotenv
 
 from flask import Flask, abort, current_app, request, make_response, jsonify
-from flask.typing import AppOrBlueprintKey
 from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.exceptions import HTTPException
 from db.queries import *
 from db.connection import get_db_session
-from helpers.note_helper import handle_note_upsert
 from helpers.collaborator_helper import handle_collaborator_upsert
 from utils.tls import get_p12_data, delete_temp_files
 from helpers.note_helper import handle_note_upsert, insert_new_note
 from utils.tls import get_p12_data
-#from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 
 load_dotenv()
@@ -27,11 +24,6 @@ app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY")
 jwt = JWTManager(app)
-
-"""
-def verify_password(user, password):
-    #return bcrypt.check_password_hash(user.password_hash, password)
-"""
 
 @app.route('/login', methods=['POST'])
 def login():
